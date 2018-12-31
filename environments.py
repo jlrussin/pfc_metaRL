@@ -62,7 +62,7 @@ class Two_step_task():
     def __init__(self,p_common_dist=[0.8,0.8],
                       r_common_dist=[0.9,0.9],
                       p_reversal_dist=[0.025,0.025]):
-        self.state_dim = 3 # States: [start, S1, S2]
+        self.state_dim = 5 # States: [start, S1, S2,reward,no_reward]
         self.action_dim = 2 # Actions: [A1, A2]
         self.p_common_dist = p_common_dist
         self.r_common_dist = r_common_dist

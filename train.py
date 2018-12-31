@@ -30,20 +30,16 @@ parser.add_argument('--episodes', type=int, default=10000,
                     help='Number of episodes for training')
 parser.add_argument('--trials', type=int, default=100,
                     help='Number of trials to run')
-parser.add_argument('--batch_size', type=int, default=200,
-                    help='Number of samples per batch')
-parser.add_argument('--gamma', type=float, default=0.99,
+parser.add_argument('--gamma', type=float, default=0.9,
                     help='Temporal discounting parameter')
 parser.add_argument('--epsilon', type=float, default=0.1,
                     help='Probability of selecting a random action')
 
 # Model
-parser.add_argument('--model', choices=['LSTM'],
+parser.add_argument('--model', default='LSTM',choices=['LSTM'],
                     help='Type of model to use')
 parser.add_argument('--hidden_dim', type=int, default=48,
                     help='Number of hidden units in each layer')
-parser.add_argument('--n_layers', type=int, default=1,
-                    help='Number of layers')
 parser.add_argument('--load_weights_from', default=None,
                     help='Path to saved weights of model')
 
@@ -61,11 +57,11 @@ parser.add_argument('--p_reversal_dist', default=[0.025,0.025],
                     'reversal probability in Two_step_task')
 
 # Optimization
-parser.add_argument('--beta_v', type=float, default=0.5,
+parser.add_argument('--beta_v', type=float, default=0.05,
                     help='Weight on value gradient in A3C loss.')
-parser.add_argument('--beta_e', type=float, default=0.1,
+parser.add_argument('--beta_e', type=float, default=0.05,
                     help='Weight on entropy gradient in A3C loss.')
-parser.add_argument('--learning_rate', type=float, default=1e-3,
+parser.add_argument('--learning_rate', type=float, default=0.0007,
                     help='Fixed learning rate for RMSProp optimizer')
 
 # Output options
@@ -74,10 +70,6 @@ parser.add_argument('--out_data_file', default='../data/out_data.json',
 parser.add_argument('--checkpoint_path',
                     default=None,
                     help='Path to output saved weights of model')
-parser.add_argument('--checkpoint_every', type=int, default=None,
-                    help='Trials before evaluating model and saving weights')
-parser.add_argument('--record_loss_every', type=int, default=1,
-                    help='Trials before printing and recording loss')
 
 def main(args):
     # CUDA
@@ -102,18 +94,16 @@ def main(args):
     model.to(device)
 
     # Loss function
-    # TODO: loss function should accept lists of deltas, probs, as, and sum them
     def A3C_loss(delta_list,probs_list,a_list):
         loss = torch.tensor(0.0)
         for delta,probs,a in zip(delta_list,probs_list,a_list):
-            L_pi = torch.log(probs[a])*delta # Policy loss
+            L_pi = (torch.log(probs[:,a])*delta) # Policy loss
             L_v = args.beta_v*(delta**2) # Value loss
             L_e = args.beta_e*torch.sum(-1*torch.log(probs)*probs) # Entropy loss
-            L = -1*(L_pi + L_v + L_e)
+            L = -1*(L_pi + L_v + L_e).squeeze()
             loss += L
         return loss
     loss_fn = A3C_loss
-    loss_fn = loss_fn.to(device)
 
     # Optimizer
     params = model.parameters()
@@ -125,6 +115,7 @@ def main(args):
         model.reinitialize()
         r = 0
         a = None
+        total_rewards = [] # List of total rewards earned on each trial
         for trial in range(args.trials):
 
             # Zero gradients
@@ -143,15 +134,16 @@ def main(args):
 
             # Run a trial
             T = 0
+            total_reward = 0 # Total reward earned on this trial
             while not done:
                 T += 1
 
                 # Convert state, previous action and previous reward to torch.tensors
-                s = torch.tensor(s)
-                a_prev = torch.zeros(action_dim)
+                s = torch.tensor(s).type(torch.FloatTensor)
+                a_prev = torch.zeros(action_dim,dtype=torch.float)
                 if a is not None:
                     a_prev[a] = 1
-                r_prev = torch.tensor(r)
+                r_prev = torch.tensor(r).type(torch.FloatTensor)
 
                 # Generate action and value prediction
                 probs,v = model(s,a_prev,r_prev)
@@ -166,18 +158,29 @@ def main(args):
                 probs_history.append(probs)
                 a_history.append(a)
                 r_history.append(r)
+                total_reward += r
+            total_rewards.append(total_reward)
 
             # Compute sequence of losses, backpropagate, and update params
             delta_list,probs_list,a_list = [],[],[]
             R = 0
             for t in range(T-1,-1,-1):
                 R = r_history[t] + args.gamma*R
-                delta_list.append(R - v_history[t])
+                delta_list.append((R - v_history[t]))
                 probs_list.append(probs_history[t])
                 a_list.append(a_history[t])
             loss = loss_fn(delta_list,probs_list,a_list)
-            loss.backward()
+            loss.backward(retain_graph=True) # Need to retain graph for later updates
             optimizer.step()
+
+    # Save weights
+    if args.checkpoint_path is not None:
+        torch.save(model.state_dict(),
+                   args.encoder_checkpoint_path)
+
+    # Write output file
+    with open(args.out_data_file,'w') as f:
+        f = json.dump(total_rewards)
 
 if __name__ == '__main__':
     args = parser.parse_args()
