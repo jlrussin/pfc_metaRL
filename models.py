@@ -54,5 +54,5 @@ class LSTM(nn.Module):
         return probs,v
 
     def reinitialize(self):
-        self.hidden_state = torch.zeros(self.hidden_dim)
-        self.cell_state = torch.zeros(self.hidden_dim)
+        self.h = torch.zeros(self.hidden_dim)
+        self.c = torch.zeros(self.hidden_dim)

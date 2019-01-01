@@ -111,6 +111,8 @@ def main(args):
 
     # Training loop
     for episode in range(args.episodes):
+        if episode % 5 == 0:
+            print("Starting episode: ", episode)
         env = task.sample()
         model.reinitialize()
         r = 0
@@ -179,8 +181,10 @@ def main(args):
                    args.encoder_checkpoint_path)
 
     # Write output file
+    print("Writing results to: ", args.out_data_file)
+    training_record = {'total_rewards':total_rewards}
     with open(args.out_data_file,'w') as f:
-        f = json.dump(total_rewards)
+        f = json.dump(training_record,f)
 
 if __name__ == '__main__':
     args = parser.parse_args()
