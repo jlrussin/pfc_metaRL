@@ -143,11 +143,11 @@ def main(args):
                 T += 1
 
                 # Convert state, previous action and previous reward to torch.tensors
-                s = torch.tensor(s).type(torch.FloatTensor)
-                a_prev = torch.zeros(action_dim,dtype=torch.float)
+                s = torch.tensor(s).type(torch.FloatTensor).to(device)
+                a_prev = torch.zeros(action_dim,dtype=torch.float).to(device)
                 if a is not None:
                     a_prev[a] = 1
-                r_prev = torch.tensor(r).type(torch.FloatTensor)
+                r_prev = torch.tensor(r).type(torch.FloatTensor).to(device)
 
                 # Generate action and value prediction
                 probs,v = model(s,a_prev,r_prev)
