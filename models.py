@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 
 class LSTM(nn.Module):
-    def __init__(self, state_dim, action_dim, hidden_dim):
+    def __init__(self, state_dim, action_dim, hidden_dim, device):
         super(LSTM, self).__init__()
 
         # Hyperparameters
@@ -30,8 +30,8 @@ class LSTM(nn.Module):
         self.softmax = nn.Softmax(dim=1)
 
         # Hidden states
-        self.h = torch.zeros(self.hidden_dim)
-        self.c = torch.zeros(self.hidden_dim)
+        self.h = torch.zeros(self.hidden_dim).to(self.device)
+        self.c = torch.zeros(self.hidden_dim).to(self.device)
 
     def forward(self,s,a_prev,r_prev):
 
@@ -54,5 +54,5 @@ class LSTM(nn.Module):
         return probs,v
 
     def reinitialize(self):
-        self.h = torch.zeros(self.hidden_dim)
-        self.c = torch.zeros(self.hidden_dim)
+        self.h = torch.zeros(self.hidden_dim).to(self.device)
+        self.c = torch.zeros(self.hidden_dim).to(self.device)

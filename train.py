@@ -88,7 +88,8 @@ def main(args):
     if args.model == 'LSTM':
         model = LSTM(state_dim=state_dim,
                      action_dim=action_dim,
-                     hidden_dim=args.hidden_dim)
+                     hidden_dim=args.hidden_dim,
+                     device=device)
     if args.load_weights_from is not None:
         model.load_state_dict(torch.load(args.load_weights_from))
     model.to(device)
