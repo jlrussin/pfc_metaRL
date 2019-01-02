@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# To run with sbatch: sbatch scripts/
+# To run: sbatch -p local -A ecortex --mem=8G --time=48:00:00 --gres=gpu:1 scripts/train_two_step.sh
 
 export HOME=`getent passwd $USER | cut -d':' -f6`
 source ~/.bashrc
