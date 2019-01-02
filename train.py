@@ -93,6 +93,8 @@ def main(args):
         model.load_state_dict(torch.load(args.load_weights_from))
     model.to(device)
 
+    print("Model is cuda after initializing: ", next(model.parameters()).is_cuda)
+
     # Loss function
     def A3C_loss(delta_list,probs_list,a_list):
         loss = torch.tensor(0.0)
@@ -118,6 +120,9 @@ def main(args):
             print("Average reward per trial: ", np.mean(total_rewards))
         env = task.sample()
         model.reinitialize()
+
+        print("Model is cuda after reinitializing: ", next(model.parameters()).is_cuda)
+
         r = 0
         a = None
         for trial in range(args.trials):
@@ -148,6 +153,12 @@ def main(args):
                 if a is not None:
                     a_prev[a] = 1
                 r_prev = torch.tensor(r).type(torch.FloatTensor).to(device)
+
+                print("Episode :", episode, "Trial :", trial, "T: ", T)
+                print("s is cuda: ", s.is_cuda)
+                print("a_prev is cuda: ", a_prev.is_cuda)
+                print("r_prev is cuda: ", r_prev.is_cuda)
+                print("Model is cuda: ", next(model.parameters()).is_cuda)
 
                 # Generate action and value prediction
                 probs,v = model(s,a_prev,r_prev)
