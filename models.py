@@ -6,6 +6,7 @@ class LSTM(nn.Module):
         super(LSTM, self).__init__()
 
         # Hyperparameters
+        self.device = device
         self.state_dim = state_dim
         self.action_dim = action_dim
         self.input_dim = state_dim + action_dim + 1 #input: s_t,a_{t-1},r_{t-1}
