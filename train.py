@@ -1,7 +1,7 @@
 # Training script for meta-reinforcement learning models
 
 # Things to do:
-#   -Test LSTM on one sample of environment
+#   Record states, actions, env.rewarded_state, rewards, etc.
 #   -Questions:
 #       -Advantage actor-critic
 #           -Need to accumulate gradients over multiple trials?
@@ -46,13 +46,13 @@ parser.add_argument('--load_weights_from', default=None,
 # Environment
 parser.add_argument('--task', default='two_step', choices=['two_step'],
                     help='Channel to use for training')
-parser.add_argument('--p_common_dist', default=[0.8,0.8],
+parser.add_argument('--p_common_dist',  type=float, nargs=2, default=[0.8,0.8],
                     help='Parameters of uniform distribution for common' +
                     'transition probability in Two_step_task')
-parser.add_argument('--r_common_dist', default=[0.9,0.9],
+parser.add_argument('--r_common_dist',  type=float, nargs=2, default=[0.9,0.9],
                     help='Parameters of uniform distribution for common' +
                     'reward probability in Two_step_task')
-parser.add_argument('--p_reversal_dist', default=[0.025,0.025],
+parser.add_argument('--p_reversal_dist',  type=float, nargs=2, default=[0.025,0.025],
                     help='Parameters of uniform distribution for reward' +
                     'reversal probability in Two_step_task')
 
@@ -97,10 +97,11 @@ def main(args):
     def A3C_loss(delta_list,probs_list,a_list):
         loss = torch.tensor(0.0)
         for delta,probs,a in zip(delta_list,probs_list,a_list):
-            L_pi = (torch.log(probs[:,a])*delta) # Policy loss
+            delta_no_grad = delta.detach()
+            L_pi = (torch.log(probs[:,a])*delta_no_grad) # Policy loss
             L_v = args.beta_v*(delta**2) # Value loss
             L_e = args.beta_e*torch.sum(-1*torch.log(probs)*probs) # Entropy loss
-            L = -1*(L_pi + L_v + L_e).squeeze()
+            L = (-L_pi + L_v - L_e).squeeze()
             loss += L
         return loss
     loss_fn = A3C_loss
@@ -110,14 +111,15 @@ def main(args):
     optimizer = torch.optim.RMSprop(params, lr=args.learning_rate, alpha=0.99)
 
     # Training loop
+    total_rewards = [] # List of total rewards earned on each trial
     for episode in range(args.episodes):
         if episode % 5 == 0:
             print("Starting episode: ", episode)
+            print("Average reward per trial: ", np.mean(total_rewards))
         env = task.sample()
         model.reinitialize()
         r = 0
         a = None
-        total_rewards = [] # List of total rewards earned on each trial
         for trial in range(args.trials):
 
             # Zero gradients
