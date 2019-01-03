@@ -32,24 +32,24 @@ class Two_step_env():
                     self.state = np.array([0,1,0,0,0])
             reward = 0
         elif s in [1,2]:
+            reward = 0
             r_rand = np.random.rand()
             if s == self.rewarded_state:
                 if r_rand < self.r_common:
                     self.state = np.array([0,0,0,1,0])
-                    reward = 1
                 else:
                     self.state = np.array([0,0,0,0,1])
-                    reward = 0
             else:
                 if r_rand > self.r_common:
                     self.state = np.array([0,0,0,1,0])
-                    reward = 1
                 else:
                     self.state = np.array([0,0,0,0,1])
-                    reward = 0
         else:
             self.state = np.array([1,0,0,0,0])
-            reward = 0
+            if s == 3:
+                reward = 1
+            else:
+                reward = 0
             self.done = True
             if np.random.rand() < self.p_reversal:
                 if self.rewarded_state == 1:
