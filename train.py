@@ -1,16 +1,11 @@
 # Training script for meta-reinforcement learning models
 
 # Things to do:
-#   Record states, actions, env.rewarded_state, rewards, etc.
-#   -Questions:
-#       -Advantage actor-critic
-#           -Need to accumulate gradients over multiple trials?
-#               -Straightforward in PyTorch: just update every n trials
-#           -Should parallelize everything with multiple threads interacting with
-#            multiple copies of the environment?
-#               -With different exploration policies
-#               -Don't need any CUDA stuff?
-#   -Write testing script
+#   -Build task used in behavioral experiment
+#   -Figure out training regime for new task
+#       -Want state-aggregation to emerge in hidden state?
+#       -Want to reproduce all results from my experiment?
+#           -E.g. effect of experiment phase on results?
 
 import argparse
 import json
@@ -70,6 +65,8 @@ parser.add_argument('--out_data_file', default='../data/out_data.json',
 parser.add_argument('--checkpoint_path',
                     default=None,
                     help='Path to output saved weights of model')
+parser.add_argument('--checkpoint_every', default=2000,
+                    help='Number of episodes before checkpointing.')
 
 def main(args):
     # CUDA
@@ -181,10 +178,10 @@ def main(args):
             loss.backward(retain_graph=True) # Need to retain graph for later updates
             optimizer.step()
 
-    # Save weights
-    if args.checkpoint_path is not None:
-        torch.save(model.state_dict(),
-                   args.encoder_checkpoint_path)
+        # Save weights
+        if episode % args.checkpoint_every == 0:
+            if args.checkpoint_path is not None:
+                torch.save(model.state_dict(),args.checkpoint_path)
 
     # Write output file
     print("Writing results to: ", args.out_data_file)
