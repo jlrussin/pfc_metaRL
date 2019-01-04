@@ -1,11 +1,22 @@
 # Training script for meta-reinforcement learning models
 
 # Things to do:
-#   -Build task used in behavioral experiment
-#   -Figure out training regime for new task
-#       -Want state-aggregation to emerge in hidden state?
-#       -Want to reproduce all results from my experiment?
-#           -E.g. effect of experiment phase on results?
+#   -Train models on rocket task:
+#       -Train on reward reversals only
+#       -Train on transition reversals only
+#       -Train on both reward and transition reversals
+#   -Test all three models on rocket task:
+#       -Reward reversals only
+#       -Transition reversals only
+#       -Both reward and transition reversals
+#   -Analyze data
+#       -Basic performance of all three models on all three tests
+#           -Total reward
+#           -Reward reversal generalization (i.e. model-based vs. model-free)
+#           -Transition reversal generalization (i.e. "state aggregation")
+#       -Look for "lazy" policy in the models
+#           -Lazy policy: maintain a single latent variable and update whenever
+#            a reward is not received
 
 import argparse
 import json
@@ -39,8 +50,8 @@ parser.add_argument('--load_weights_from', default=None,
                     help='Path to saved weights of model')
 
 # Environment
-parser.add_argument('--task', default='two_step', choices=['two_step'],
-                    help='Channel to use for training')
+parser.add_argument('--task', default='two_step', choices=['two_step','rocket'],
+                    help='Task to use for training')
 parser.add_argument('--p_common_dist',  type=float, nargs=2, default=[0.8,0.8],
                     help='Parameters of uniform distribution for common' +
                     'transition probability in Two_step_task')
@@ -49,7 +60,11 @@ parser.add_argument('--r_common_dist',  type=float, nargs=2, default=[0.9,0.9],
                     'reward probability in Two_step_task')
 parser.add_argument('--p_reversal_dist',  type=float, nargs=2, default=[0.025,0.025],
                     help='Parameters of uniform distribution for reward' +
-                    'reversal probability in Two_step_task')
+                    'reversal probability in two step and rocket tasks')
+parser.add_argument('--p_reward_reversal_dist',  type=float, nargs=2,
+                    default=[0.5,0.5], help='Parameters of uniform' +
+                    'distribution for conditional probability of reward' +
+                    'reversal given a reversal will occur in rocket task')
 
 # Optimization
 parser.add_argument('--beta_v', type=float, default=0.05,
@@ -78,6 +93,9 @@ def main(args):
         task = Two_step_task(args.p_common_dist,
                                   args.r_common_dist,
                                   args.p_reversal_dist)
+    if args.task == 'rocket':
+        task = Rocket_task(args.p_reversal_dist,
+                           args.p_reward_reversal_dist)
     state_dim = task.state_dim
     action_dim = task.action_dim
 
