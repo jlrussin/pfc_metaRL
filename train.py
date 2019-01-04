@@ -1,6 +1,7 @@
 # Training script for meta-reinforcement learning models
 
 # Things to do:
+#   -Write testing scripts and bash scripts
 #   -Train models on rocket task:
 #       -Train on reward reversals only
 #       -Train on transition reversals only
@@ -85,7 +86,8 @@ parser.add_argument('--checkpoint_every', default=2000,
 
 def main(args):
     # CUDA
-    use_cuda = torch.cuda.is_available()
+    #use_cuda = torch.cuda.is_available()
+    use_cuda = False # Faster on cpu
     device = torch.device("cuda:0" if use_cuda else "cpu")
 
     # Environment
@@ -93,7 +95,7 @@ def main(args):
         task = Two_step_task(args.p_common_dist,
                                   args.r_common_dist,
                                   args.p_reversal_dist)
-    if args.task == 'rocket':
+    elif args.task == 'rocket':
         task = Rocket_task(args.p_reversal_dist,
                            args.p_reward_reversal_dist)
     state_dim = task.state_dim
