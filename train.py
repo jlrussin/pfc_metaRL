@@ -1,16 +1,8 @@
 # Training script for meta-reinforcement learning models
 
 # Things to do:
-#   -Write testing scripts and bash scripts
-#   -Train models on rocket task:
-#       -Train on reward reversals only
-#       -Train on transition reversals only
-#       -Train on both reward and transition reversals
-#   -Test all three models on rocket task:
-#       -Reward reversals only
-#       -Transition reversals only
-#       -Both reward and transition reversals
-#   -Analyze data
+#   -Add more descriptions/summary/interpretation to analysis notebook
+#   -Add code for all analysis:
 #       -Basic performance of all three models on all three tests
 #           -Total reward
 #           -Reward reversal generalization (i.e. model-based vs. model-free)
