@@ -1,15 +1,14 @@
 # Training script for meta-reinforcement learning models
 
-# Things to do:
-#   -Add more descriptions/summary/interpretation to analysis notebook
-#   -Add code for all analysis:
-#       -Basic performance of all three models on all three tests
-#           -Total reward
-#           -Reward reversal generalization (i.e. model-based vs. model-free)
-#           -Transition reversal generalization (i.e. "state aggregation")
-#       -Look for "lazy" policy in the models
-#           -Lazy policy: maintain a single latent variable and update whenever
-#            a reward is not received
+# Things to do
+#   -Look for "lazy" policy in the models
+#       -Test: contrive environment to parse reward vs. transition maintenance?
+#   -Build grid world or graph environments and compare hidden states of LSTM
+#    to successor representation: is the meta-RL framework a good model of
+#    temporal abstraction?
+#   -Build structured environment and compare representations to hierarchical
+#    reinforcement learning methods?
+#       -Can the LSTM learn structured/recursive policy representations?
 
 import argparse
 import json
