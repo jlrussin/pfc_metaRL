@@ -232,7 +232,7 @@ class Rooms_grid_env():
 
 class Rooms_grid_task():
     def __init__(self,room_size=3):
-        self.state_dim = 2*room_size+3
+        self.state_dim = 4*room_size**2 + 4
         self.action_dim = 4
         assert room_size % 2 == 1, "Room size must be odd"
         self.room_size = room_size

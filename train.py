@@ -66,6 +66,8 @@ parser.add_argument('--beta_e', type=float, default=0.05,
                     help='Weight on entropy gradient in A3C loss.')
 parser.add_argument('--learning_rate', type=float, default=0.0007,
                     help='Fixed learning rate for RMSProp optimizer')
+parser.add_argument('--t_max', type=int, default=300,
+                    help='Max number of backprop-through-time steps')
 
 # Output options
 parser.add_argument('--out_data_file', default='../data/out_data.json',
@@ -132,7 +134,7 @@ def main(args):
             print("Average reward per trial: ", np.mean(total_rewards))
         env = task.sample()
         model.reinitialize()
-
+        steps_since_detach = 0 # Number of steps since .detach() was last called
         r = 0
         a = None
         for trial in range(args.trials):
@@ -156,6 +158,13 @@ def main(args):
             total_reward = 0 # Total reward earned on this trial
             while not done:
                 T += 1
+                steps_since_detach += 1
+
+                if steps_since_detach == args.t_max:
+                    # Detach hidden states
+                    model.h = model.h.detach()
+                    model.c = model.c.detach()
+                    steps_since_detach = 0
 
                 # Convert state, previous action and previous reward to torch.tensors
                 s = torch.tensor(s).type(torch.FloatTensor).to(device)
@@ -179,6 +188,8 @@ def main(args):
                 r_history.append(r)
                 total_reward += r
             total_rewards.append(total_reward)
+
+            # TODO: integrate below for loop above (so that updaing can occur mid-trial)
 
             # Compute sequence of losses, backpropagate, and update params
             delta_list,probs_list,a_list = [],[],[]
