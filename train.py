@@ -1,14 +1,13 @@
 # Training script for meta-reinforcement learning models
 
 # Things to do
-#   -Look for "lazy" policy in the models
-#       -Test: contrive environment to parse reward vs. transition maintenance?
-#   -Build grid world or graph environments and compare hidden states of LSTM
-#    to successor representation: is the meta-RL framework a good model of
-#    temporal abstraction?
-#   -Build structured environment and compare representations to hierarchical
-#    reinforcement learning methods?
-#       -Can the LSTM learn structured/recursive policy representations?
+#   -Train model on rooms grid environment
+#   -Build script for testing on rooms grid environment
+#       -Test on environment and compare to optimal search
+#       -Record hidden states of model under certain conditions
+#   -Write code for visualizing results
+#       -Comparison with optimal model
+#       -MDS/t-SNE for visualizing hidden states
 
 import argparse
 import json
@@ -42,7 +41,7 @@ parser.add_argument('--load_weights_from', default=None,
                     help='Path to saved weights of model')
 
 # Environment
-parser.add_argument('--task', default='two_step', choices=['two_step','rocket'],
+parser.add_argument('--task', default='two_step', choices=['two_step','rocket','rooms_grid'],
                     help='Task to use for training')
 parser.add_argument('--p_common_dist',  type=float, nargs=2, default=[0.8,0.8],
                     help='Parameters of uniform distribution for common' +
@@ -57,7 +56,9 @@ parser.add_argument('--p_reward_reversal_dist',  type=float, nargs=2,
                     default=[0.5,0.5], help='Parameters of uniform' +
                     'distribution for conditional probability of reward' +
                     'reversal given a reversal will occur in rocket task')
-
+parser.add_argument('--room_size',  type=int, default=3,
+                    help='Room height and width for rooms_grid task')
+                    
 # Optimization
 parser.add_argument('--beta_v', type=float, default=0.05,
                     help='Weight on value gradient in A3C loss.')

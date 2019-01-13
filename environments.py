@@ -2,6 +2,8 @@
 #   -Vectorize everything so that multiple trials can be run in parallel
 
 import numpy as np
+from utils import *
+import matplotlib.pyplot as plt
 
 # Daw two-step task
 class Two_step_env():
@@ -180,4 +182,76 @@ class Rocket_task():
         p_reward_reversal = np.random.uniform(self.p_reward_reversal_dist[0],
                                               self.p_reward_reversal_dist[1])
         env = Rocket_env(p_reversal,p_reward_reversal)
+        return env
+
+class Rooms_grid_env():
+    def __init__(self,grid,reward_location=(1,1)):
+        self.grid = grid
+        self.reward_location = reward_location
+        # Generate dictionary for converting locations to states
+        xs,ys = np.nonzero(self.grid)
+        num_locs = xs.shape[0]
+        self.locs_to_states = {(xs[i],ys[i]):np.eye(num_locs)[i,:] for i in range(num_locs)}
+    def init_new_trial(self):
+        random_state_loc = sample_grid(self.grid)
+        self.state_loc = random_state_loc
+        self.state = self.locs_to_states[random_state_loc]
+        self.done = False
+    def step(self,action):
+        if self.done:
+            print("Need to reinitialize trial before taking another step")
+            return
+        # Get new location
+        if action == 0: # Move right
+            new_loc = (self.state_loc[0]+1, self.state_loc[1])
+        elif action == 1: # Move left
+            new_loc = (self.state_loc[0]-1, self.state_loc[1])
+        elif action == 2: # Move up
+            new_loc = (self.state_loc[0], self.state_loc[1]-1)
+        elif action == 3: # Move down
+            new_loc = (self.state_loc[0], self.state_loc[1]+1)
+        # Can't go through walls
+        if self.grid[new_loc[0],new_loc[1]] == 1:
+            self.state_loc = new_loc
+        else:
+            self.state_loc = self.state_loc # stay in the same location
+        # Get new state
+        self.state = self.locs_to_states[self.state_loc]
+        # Reward
+        if self.state_loc == self.reward_location:
+            reward = 1
+            self.done = True
+        else:
+            reward = -0.01
+        return self.state, reward, self.done
+    def visualize(self):
+        grid_with_reward = self.grid.copy()
+        grid_with_reward[self.reward_location[0],self.reward_location[1]] = 2
+        plt.imshow(grid_with_reward)
+        plt.show()
+
+class Rooms_grid_task():
+    def __init__(self,room_size=3):
+        self.state_dim = 2*room_size+3
+        self.action_dim = 4
+        assert room_size % 2 == 1, "Room size must be odd"
+        self.room_size = room_size
+
+        # Build grid
+        grid = np.zeros([2*room_size+3,2*room_size+3])
+        grid[1:room_size+1,1:room_size+1] = 1 # room1
+        grid[room_size+2:2*room_size+2,1:room_size+1] = 1 # room2
+        grid[1:room_size+1,room_size+2:2*room_size+2] = 1 # room3
+        grid[room_size+2:2*room_size+2,room_size+2:2*room_size+2] = 1 # room4
+        one_quarter = int((room_size+1)/2)
+        grid_center = room_size+1
+        three_quarters = grid_center + one_quarter
+        grid[grid_center,one_quarter] = 1 # hall 1-2
+        grid[one_quarter,grid_center] = 1 # hall 1-3
+        grid[three_quarters,grid_center] = 1 # hall 2-4
+        grid[grid_center,three_quarters] = 1 # hall 3-4
+        self.grid = grid
+    def sample(self):
+        reward_location = sample_grid(self.grid)
+        env = Rooms_grid_env(self.grid,reward_location)
         return env
