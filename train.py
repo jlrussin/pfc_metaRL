@@ -58,7 +58,7 @@ parser.add_argument('--p_reward_reversal_dist',  type=float, nargs=2,
                     'reversal given a reversal will occur in rocket task')
 parser.add_argument('--room_size',  type=int, default=3,
                     help='Room height and width for rooms_grid task')
-                    
+
 # Optimization
 parser.add_argument('--beta_v', type=float, default=0.05,
                     help='Weight on value gradient in A3C loss.')
@@ -90,6 +90,8 @@ def main(args):
     elif args.task == 'rocket':
         task = Rocket_task(args.p_reversal_dist,
                            args.p_reward_reversal_dist)
+    elif args.task == 'rooms_grid':
+        task = Rooms_grid_task(args.room_size)
     state_dim = task.state_dim
     action_dim = task.action_dim
 
