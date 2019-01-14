@@ -2,10 +2,11 @@
 
 # Things to do
 #   -Train model on rooms grid environment
+#       -Push, run on cluster
 #   -Build script for testing on rooms grid environment
-#       -Test on environment and compare to optimal search
 #       -Record hidden states of model under certain conditions
 #   -Write code for visualizing results
+#       -Visualize paths taken
 #       -Comparison with optimal model
 #       -MDS/t-SNE for visualizing hidden states
 
@@ -77,6 +78,8 @@ parser.add_argument('--checkpoint_path',
                     help='Path to output saved weights of model')
 parser.add_argument('--checkpoint_every', default=2000,
                     help='Number of episodes before checkpointing.')
+parser.add_argument('--print_every', default=1,
+                    help='Number of episodes before printing average reward.')
 
 def main(args):
     # CUDA
@@ -127,14 +130,17 @@ def main(args):
     optimizer = torch.optim.RMSprop(params, lr=args.learning_rate, alpha=0.99)
 
     # Training loop
-    total_rewards = [] # List of total rewards earned on each trial
+    total_rewards = [] # Total rewards earned on each trial
+    episode_rewards = [] # Total rewards earned on each trial in this episode
     for episode in range(args.episodes):
-        if episode % 5 == 0:
+        if episode % args.print_every == 0:
+            if episode > 0:
+                print("Average reward per trial: ", np.mean(episode_rewards))
             print("Starting episode: ", episode)
-            print("Average reward per trial: ", np.mean(total_rewards))
+        episode_rewards = []
         env = task.sample()
         model.reinitialize()
-        steps_since_detach = 0 # Number of steps since .detach() was last called
+        t = 0 # Number of steps since .detach() was last called
         r = 0
         a = None
         for trial in range(args.trials):
@@ -154,17 +160,9 @@ def main(args):
             r_history = []
 
             # Run a trial
-            T = 0
             total_reward = 0 # Total reward earned on this trial
             while not done:
-                T += 1
-                steps_since_detach += 1
-
-                if steps_since_detach == args.t_max:
-                    # Detach hidden states
-                    model.h = model.h.detach()
-                    model.c = model.c.detach()
-                    steps_since_detach = 0
+                t += 1
 
                 # Convert state, previous action and previous reward to torch.tensors
                 s = torch.tensor(s).type(torch.FloatTensor).to(device)
@@ -187,21 +185,33 @@ def main(args):
                 a_history.append(a)
                 r_history.append(r)
                 total_reward += r
+
+                # Compute sequence of losses, backpropagate, update params
+                if t == args.t_max or done:
+                    delta_list,probs_list,a_list = [],[],[]
+                    if done:
+                        R = 0
+                    else:
+                        R = v
+                    for i in range(len(v_history)-1,-1,-1):
+                        R = r_history[i] + args.gamma*R
+                        delta_list.append((R - v_history[i]))
+                        probs_list.append(probs_history[i])
+                        a_list.append(a_history[i])
+                    loss = loss_fn(delta_list,probs_list,a_list)
+                    loss.backward(retain_graph=True) # Need to retain graph for later updates
+                    optimizer.step()
+                    optimizer.zero_grad()
+                    if t == args.t_max:
+                        model.h = model.h.detach()
+                        model.c = model.c.detach()
+                        t = 0
+                    v_history = []
+                    probs_history = []
+                    a_history = []
+                    r_history = []
             total_rewards.append(total_reward)
-
-            # TODO: integrate below for loop above (so that updaing can occur mid-trial)
-
-            # Compute sequence of losses, backpropagate, and update params
-            delta_list,probs_list,a_list = [],[],[]
-            R = 0
-            for t in range(T-1,-1,-1):
-                R = r_history[t] + args.gamma*R
-                delta_list.append((R - v_history[t]))
-                probs_list.append(probs_history[t])
-                a_list.append(a_history[t])
-            loss = loss_fn(delta_list,probs_list,a_list)
-            loss.backward(retain_graph=True) # Need to retain graph for later updates
-            optimizer.step()
+            episode_rewards.append(total_reward)
 
         # Save weights
         if episode % args.checkpoint_every == 0:

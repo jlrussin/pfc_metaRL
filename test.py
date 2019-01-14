@@ -29,7 +29,7 @@ parser.add_argument('--load_weights_from', default=None,
                     help='Path to saved weights of model')
 
 # Environment
-parser.add_argument('--task', default='two_step', choices=['two_step','rocket'],
+parser.add_argument('--task', default='two_step', choices=['two_step','rocket','rooms_grid'],
                     help='Task to use for training')
 parser.add_argument('--p_common_dist',  type=float, nargs=2, default=[0.8,0.8],
                     help='Parameters of uniform distribution for common' +
@@ -44,6 +44,8 @@ parser.add_argument('--p_reward_reversal_dist',  type=float, nargs=2,
                     default=[0.5,0.5], help='Parameters of uniform' +
                     'distribution for conditional probability of reward' +
                     'reversal given a reversal will occur in rocket task')
+parser.add_argument('--room_size',  type=int, default=3,
+                    help='Room height and width for rooms_grid task')
 
 # Output options
 parser.add_argument('--out_data_file', default='../data/test_data.npy',
@@ -62,6 +64,8 @@ def main(args):
     elif args.task == 'rocket':
         task = Rocket_task(args.p_reversal_dist,
                            args.p_reward_reversal_dist)
+    elif args.task == 'rooms_grid':
+        task = Rooms_grid_task(args.room_size)
     state_dim = task.state_dim
     action_dim = task.action_dim
 
@@ -83,10 +87,12 @@ def main(args):
     elif args.task == 'rocket':
         col_names = ['Episode','Trial','T','State','Action','Reward',
                      'Rewarded_state', 'Transition_regime']
-    n_rows = args.episodes*args.trials*3
+    elif args.task == 'rooms_grid':
+        col_names = ['Episode','Trial','T','State_row','State_col','Action',
+                     'Reward','Reward_location_row','Reward_location_col']
     n_cols = len(col_names)
-    df = np.full_like(np.zeros([n_rows,n_cols]),np.nan)
-    row = 0 # keep track of what row we're in
+    df = np.full_like(np.zeros([1,n_cols]),np.nan)
+    row = 1 # keep track of what row we're in
 
     # Testing loop
     with torch.no_grad():
@@ -106,12 +112,21 @@ def main(args):
                 while not done:
                     T += 1
 
+                    # Add new row to dataframe
+                    df = np.concatenate((df,np.zeros([1,n_cols])),axis=0)
+
                     # Record some data
                     df[row,0] = episode #episode number
                     df[row,1] = trial #trial number
                     df[row,2] = T #timestep
-                    df[row,3] = np.nonzero(np.array(s))[0][0] #state
-                    df[row,6] = env.rewarded_state #note: recorded before step
+                    if args.task in ['two_step','rocket']:
+                        df[row,3] = np.nonzero(np.array(s))[0][0] #state
+                        df[row,6] = env.rewarded_state #note: recorded before step
+                    elif args.task == 'rooms_grid':
+                        df[row,3] = env.state_loc[0]
+                        df[row,4] = env.state_loc[1]
+                        df[row,7] = env.reward_location[0]
+                        df[row,8] = env.reward_location[1]
                     if args.task == 'rocket':
                         df[row,7] = env.transition_regime
 
@@ -131,13 +146,18 @@ def main(args):
                     s,r,done = env.step(a)
 
                     # Record the rest of the row's data
-                    df[row,4] = a.item() #action
-                    df[row,5] = r #reward
+                    if args.task in ['two_step','rocket']:
+                        df[row,4] = a.item() #action
+                        df[row,5] = r #reward
+                    elif args.task == 'rooms_grid':
+                        df[row,5] = a.item()
+                        df[row,6] = r
 
                     # Update row
                     row += 1
 
     # Write output file
+    df = df[1:,:] # Remove first row of nans
     print("Writing results to: ", args.out_data_file)
     np.save(args.out_data_file,df)
 

@@ -202,13 +202,13 @@ class Rooms_grid_env():
             print("Need to reinitialize trial before taking another step")
             return
         # Get new location
-        if action == 0: # Move right
+        if action == 0: # Move down
             new_loc = (self.state_loc[0]+1, self.state_loc[1])
-        elif action == 1: # Move left
+        elif action == 1: # Move up
             new_loc = (self.state_loc[0]-1, self.state_loc[1])
-        elif action == 2: # Move up
+        elif action == 2: # Move left
             new_loc = (self.state_loc[0], self.state_loc[1]-1)
-        elif action == 3: # Move down
+        elif action == 3: # Move right
             new_loc = (self.state_loc[0], self.state_loc[1]+1)
         # Can't go through walls
         if self.grid[new_loc[0],new_loc[1]] == 1:
