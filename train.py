@@ -76,9 +76,9 @@ parser.add_argument('--out_data_file', default='../data/out_data.json',
 parser.add_argument('--checkpoint_path',
                     default=None,
                     help='Path to output saved weights of model')
-parser.add_argument('--checkpoint_every', default=2000,
+parser.add_argument('--checkpoint_every', type=int, default=2000,
                     help='Number of episodes before checkpointing.')
-parser.add_argument('--print_every', default=1,
+parser.add_argument('--print_every', type=int, default=1,
                     help='Number of episodes before printing average reward.')
 
 def main(args):
