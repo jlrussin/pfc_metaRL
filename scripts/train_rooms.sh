@@ -14,7 +14,7 @@ echo "Training metaRL system on rooms_grid task"
 
 python train.py \
 --episodes 1000 \
---trials 200 \
+--trials 20 \
 --task rooms_grid \
 --beta_v 0.05 \
 --beta_e 0.05 \
