@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# To run: sbatch -p local -A ecortex --mem=8G --time=48:00:00 --gres=gpu:1 scripts/train_test_rooms.sh
+# To run: sbatch -p local -A ecortex --mem=8G --time=48:00:00 --gres=gpu:1 scripts/train_rooms.sh
 
 export HOME=`getent passwd $USER | cut -d':' -f6`
 source ~/.bashrc
@@ -23,10 +23,3 @@ python train.py \
 --out_data_file results/train_rooms.json \
 --checkpoint_path ../data/model_weights/LSTM_rooms.pt \
 --checkpoint_every 200
-
-python test.py \
---episodes 300 \
---trials 200 \
---load_weights_from ../data/model_weights/LSTM_rooms.pt \
---task rooms_grid \
---out_data_file results/test_rooms.npy

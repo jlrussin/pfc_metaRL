@@ -46,10 +46,14 @@ parser.add_argument('--p_reward_reversal_dist',  type=float, nargs=2,
                     'reversal given a reversal will occur in rocket task')
 parser.add_argument('--room_size',  type=int, default=3,
                     help='Room height and width for rooms_grid task')
+parser.add_argument('--timeout',  type=int, default=500,
+                    help='Steps before timing out and starting new trial')
 
 # Output options
 parser.add_argument('--out_data_file', default='../data/test_data.npy',
                     help='Path to output data file with testing results')
+parser.add_argument('--print_every', type=int, default=1,
+                    help='Number of episodes before printing episode.')
 
 def main(args):
     # CUDA
@@ -97,7 +101,7 @@ def main(args):
     # Testing loop
     with torch.no_grad():
         for episode in range(args.episodes):
-            if episode % 5 == 0:
+            if episode % args.print_every == 0:
                 print("Starting episode: ", episode)
             env = task.sample()
             model.reinitialize()
@@ -110,6 +114,8 @@ def main(args):
                 # Run a trial
                 T = 0
                 while not done:
+                    if T > args.timeout:
+                        break
                     T += 1
 
                     # Add new row to dataframe
