@@ -1,8 +1,11 @@
 # Training script for meta-reinforcement learning models
 
 # Things to do
-#   -Train model on rooms grid environment
-#       -Push, run on cluster
+#   -Implement multiple threads and asynchronous updates
+#       -Figure out how to run multiple threads:
+#           -Do they actually run in parallel on different cpu threads?
+#           -Figure out how/when to synchronize
+#           -Need a special file structure?
 #   -Build script for testing on rooms grid environment
 #       -Record hidden states of model under certain conditions
 #   -Write code for visualizing results
