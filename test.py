@@ -115,6 +115,7 @@ def main(args):
                 T = 0
                 while not done:
                     if T > args.timeout:
+                        print("Model timed out at T = ", args.timeout)
                         break
                     T += 1
 
