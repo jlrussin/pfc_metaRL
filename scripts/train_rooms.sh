@@ -13,8 +13,8 @@ conda activate pytorch0.4.1
 echo "Training metaRL system on rooms_grid task"
 
 python train.py \
---episodes 1000 \
---trials 20 \
+--episodes 10000 \
+--trials 1 \
 --task rooms_grid \
 --beta_v 0.05 \
 --beta_e 0.05 \
