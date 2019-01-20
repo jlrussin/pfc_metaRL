@@ -1,11 +1,6 @@
 # Training script for meta-reinforcement learning models
 
 # Things to do
-#   -Implement multiple threads and asynchronous updates
-#       -Figure out how to run multiple threads:
-#           -Do they actually run in parallel on different cpu threads?
-#           -Figure out how/when to synchronize
-#           -Need a special file structure?
 #   -Build script for testing on rooms grid environment
 #       -Record hidden states of model under certain conditions
 #   -Write code for visualizing results
@@ -138,7 +133,8 @@ def main(args):
     for episode in range(args.episodes):
         if episode % args.print_every == 0:
             if episode > 0:
-                print("Average reward per trial: ", np.mean(episode_rewards))
+                print("Average reward in last episode: ", np.mean(episode_rewards))
+                print("Average reward overall: ", np.mean(total_rewards))
             print("Starting episode: ", episode)
         episode_rewards = []
         env = task.sample()
@@ -218,6 +214,7 @@ def main(args):
 
         # Save weights
         if episode % args.checkpoint_every == 0:
+            print("Saving model weights to: ", args.checkpoint_path)
             if args.checkpoint_path is not None:
                 torch.save(model.state_dict(),args.checkpoint_path)
 
