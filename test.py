@@ -12,7 +12,7 @@ from environments import *
 from utils import *
 
 parser = argparse.ArgumentParser()
-# Training
+# Testing
 parser.add_argument('--episodes', type=int, default=300,
                     help='Number of episodes for training')
 parser.add_argument('--trials', type=int, default=100,
@@ -56,8 +56,8 @@ parser.add_argument('--print_every', type=int, default=1,
                     help='Number of episodes before printing episode.')
 
 def main(args):
-    # CUDA
-    use_cuda = torch.cuda.is_available()
+    #use_cuda = torch.cuda.is_available()
+    use_cuda = False # Faster on cpu
     device = torch.device("cuda:0" if use_cuda else "cpu")
 
     # Environment
